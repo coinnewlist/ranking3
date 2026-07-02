@@ -159,6 +159,18 @@
             const sign = change >= 0 ? '+' : '';
             return `${sign}${change.toFixed(2)}%`;
         }
+
+        function isMobileView() {
+            return window.innerWidth <= 768;
+        }
+
+        function buildNameCellHtml(crypto) {
+            const name = crypto.name || 'Unknown';
+            const symbol = (crypto.symbol || '').toUpperCase();
+            const imageUrl = crypto.image || 'https://cryptologos.cc/logos/bitcoin-btc-logo.png';
+            const label = isMobileView() ? symbol : `${name} (${symbol})`;
+            return `<img src="${imageUrl}" class="crypto-logo" alt="${name}" onerror="this.src='https://cryptologos.cc/logos/bitcoin-btc-logo.png'"> ${label}`;
+        }
         
         // DOM elements
         const trendingContainer = document.getElementById('trendingContainer');
@@ -169,6 +181,16 @@
         let currentTrendingData = null;
         let renderScheduled = false;
         let trendingRenderScheduled = false;
+        let resizeRenderScheduled = false;
+        
+        window.addEventListener('resize', () => {
+            if (resizeRenderScheduled) return;
+            resizeRenderScheduled = true;
+            requestAnimationFrame(() => {
+                renderTable();
+                resizeRenderScheduled = false;
+            });
+        });
         
         // ========== RENDER TABLE (RANKS 201-300) - BATCH UPDATES FOR SMOOTHNESS ==========
         function renderTable() {
@@ -206,10 +228,7 @@
             rankCell.style.fontWeight = '500';
 
             const nameCell = document.createElement('td');
-            const name = crypto.name || 'Unknown';
-            const symbol = (crypto.symbol || '').toUpperCase();
-            const imageUrl = crypto.image || 'https://cryptologos.cc/logos/bitcoin-btc-logo.png';
-            nameCell.innerHTML = `<img src="${imageUrl}" class="crypto-logo" alt="${name}" onerror="this.src='https://cryptologos.cc/logos/bitcoin-btc-logo.png'"> ${name} (${symbol})`;
+            nameCell.innerHTML = buildNameCellHtml(crypto);
 
             const marketCell = document.createElement('td');
             marketCell.textContent = formatMarketCap(crypto.market_cap ?? 0);
@@ -237,9 +256,6 @@
             const change1hCell = row.cells[4];
             const changeCell = row.cells[5];
 
-            const name = crypto.name || 'Unknown';
-            const symbol = (crypto.symbol || '').toUpperCase();
-            const imageUrl = crypto.image || 'https://cryptologos.cc/logos/bitcoin-btc-logo.png';
             const marketCapText = formatMarketCap(crypto.market_cap ?? 0);
             const priceText = formatPrice(crypto.current_price ?? 0);
             const change1h = crypto.price_change_percentage_1h_in_currency ?? 0;
@@ -255,7 +271,7 @@
                 updated = true;
             }
 
-            const newNameHtml = `<img src="${imageUrl}" class="crypto-logo" alt="${name}" onerror="this.src='https://cryptologos.cc/logos/bitcoin-btc-logo.png'"> ${name} (${symbol})`;
+            const newNameHtml = buildNameCellHtml(crypto);
             if (nameCell.innerHTML !== newNameHtml) {
                 nameCell.innerHTML = newNameHtml;
                 updated = true;
@@ -473,3 +489,5 @@
     </script>
 </body>
 </html>
+
+
